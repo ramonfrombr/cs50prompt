@@ -1,12 +1,12 @@
 "use client";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ValueContext } from "../components/promptApi";
 import {
   CaseSensitive,
   ChevronRight,
   Pause,
   Play,
-  Square,
+  Repeat,
   Timer,
 } from "lucide-react";
 
@@ -15,9 +15,36 @@ const Teleprompter = () => {
 
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [isScrolling, setIsScrolling] = useState(true);
-  const [isPaused, setisPaused] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [rangeValue, setRangeValue] = useState(0.3);
   const [fontSize, setFontSize] = useState(36);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === " ") {
+        event.preventDefault();
+        setIsScrolling(true);
+        setIsPaused(!isPaused);
+      } else if (event.key === "ArrowUp") {
+        scrollUp();
+      } else if (event.key === "ArrowDown") {
+        scrollDown();
+      }
+    },
+    [isPaused]
+  );
+
+  const scrollUp = () => {
+    if (textRef.current) {
+      textRef.current.scrollTop -= 10;
+    }
+  };
+
+  const scrollDown = () => {
+    if (textRef.current) {
+      textRef.current.scrollTop += 10;
+    }
+  };
 
   useEffect(() => {
     if (isScrolling && textRef.current) {
@@ -42,19 +69,41 @@ const Teleprompter = () => {
     // cleanup function to prevent memory leaks
   }, [isScrolling, isPaused, rangeValue]);
 
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isPaused, handleKeyDown]);
+
   return (
     <div>
       {/* OPTIONS */}
       <header className="fixed top-0 left-0 w-full py-5 flex flex-row gap-10 justify-center">
-        <button className={`bg-black border-1 rounded p-3 text-gray-50`}>
-          <Play size={20} />
+        <button
+          onClick={() => {
+            setIsScrolling(true);
+            setIsPaused(!isPaused);
+          }}
+          className={`${
+            isPaused ? "bg-blue-400" : "bg-orange-400"
+          } border-1 rounded p-3 text-gray-50`}
+        >
+          {isPaused ? <Play size={20} /> : <Pause size={20} />}
         </button>
-        <button className="bg-red-600 p-3 rounded text-gray-50">
-          <Pause size={20} />
+        <button
+          onClick={(e) => {
+            // don't run this code on keydown event
+            if (e.type === "click") {
+              setIsPaused((current) => true);
+              textRef.current!.scrollTop = 0;
+            }
+          }}
+          className="bg-red-600 p-3 rounded text-gray-50"
+        >
+          <Repeat size={20} />
         </button>
         <div className="flex gap-3">
           <p className="flex gap-3 text-xl items-center">
-            <Timer size={20} /> {rangeValue}
+            <Timer size={40} /> {rangeValue}
           </p>
           <input
             type="range"
@@ -81,7 +130,7 @@ const Teleprompter = () => {
       </header>
 
       {/* Black Box */}
-      <div className="w-full h-72 bg-black fixed inset-0 m-auto -z-10 flex items-center">
+      <div className="w-full h-[50vh] bg-black fixed inset-0 m-auto -z-10 flex items-center text-white">
         <ChevronRight size={80} />
       </div>
 
