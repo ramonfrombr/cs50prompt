@@ -1,17 +1,58 @@
 "use client";
-import Link from "next/link";
-import { ChangeEvent, useContext } from "react";
+import { ChangeEvent, useContext, useEffect, useState } from "react";
 import { ValueContext } from "./promptApi";
+import { socket } from "../socket";
+import { useRouter } from "next/navigation";
 
 const Container = () => {
   const { value, setValue } = useContext(ValueContext);
+  const router = useRouter();
+
+  const [listOfPrompts, setListOfPrompts] = useState<
+    { roomId: string; prompt: string }[]
+  >([]);
 
   const changeValue = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
   };
 
+  const generatePrompt = () => {
+    socket.emit("create_prompt", "home", value);
+  };
+
+  const getPrompts = () => {
+    socket.emit("get_prompts");
+  };
+
+  const joinHomeRoom = () => {
+    socket.emit("join_room", "home");
+  };
+
+  useEffect(() => {
+    joinHomeRoom();
+    getPrompts();
+
+    const receivePrompts = (data: any) => {
+      setListOfPrompts(data);
+    };
+
+    socket.on("receive_prompts", receivePrompts);
+
+    return () => {
+      socket.off("receive_prompts", receivePrompts);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col items-center max-w-screen-lg m-auto h-screen p-10">
+      {listOfPrompts.length > 0 && (
+        <div>
+          <h2>List of Teleprompts</h2>
+          {listOfPrompts.map((prompt) => (
+            <div key={prompt.roomId}>{prompt.roomId}</div>
+          ))}
+        </div>
+      )}
       <h1 className="text-3xl py-10">CS50 Teleprompter</h1>
       <p className="m-auto max-w-screen-sm text-center">
         A teleprompter, also known as an autocue, is a device used in
@@ -26,12 +67,12 @@ const Container = () => {
         onChange={changeValue}
       ></textarea>
 
-      <Link
-        href="/teleprompter"
+      <button
+        onClick={generatePrompt}
         className="px-4 py-2 text-white bg-blue-500 rounded-md"
       >
         Generate
-      </Link>
+      </button>
     </div>
   );
 };
