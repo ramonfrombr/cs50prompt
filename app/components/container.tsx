@@ -3,6 +3,8 @@ import { ChangeEvent, useContext, useEffect, useState } from "react";
 import { ValueContext } from "./promptApi";
 import { socket } from "../socket";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+import Link from "next/link";
 
 const Container = () => {
   const { value, setValue } = useContext(ValueContext);
@@ -17,7 +19,9 @@ const Container = () => {
   };
 
   const generatePrompt = () => {
-    socket.emit("create_prompt", "home", value);
+    const promptId = uuidv4();
+    socket.emit("create_prompt", promptId, value);
+    router.push(`/teleprompter/${promptId}`);
   };
 
   const getPrompts = () => {
@@ -49,7 +53,9 @@ const Container = () => {
         <div>
           <h2>List of Teleprompts</h2>
           {listOfPrompts.map((prompt) => (
-            <div key={prompt.roomId}>{prompt.roomId}</div>
+            <Link key={prompt.roomId} href={`/teleprompter/${prompt.roomId}`}>
+              {prompt.roomId}
+            </Link>
           ))}
         </div>
       )}
