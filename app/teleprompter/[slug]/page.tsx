@@ -214,7 +214,7 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
   return (
     <div>
       {/* OPTIONS */}
-      <header className="fixed top-0 left-0 w-full py-5 flex flex-row gap-10 justify-center z-50">
+      <header className="fixed top-0 left-0 w-full py-5 px-5 justify-start z-50 flex sm:flex-row flex-col items-start sm:items-center gap-10 overflow-y-auto sm:h-[15vh]">
         <button
           onClick={() => {
             sendStartPrompt();
@@ -236,7 +236,6 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
         >
           <Repeat size={20} />
         </button>
-
         <button
           onClick={() => setTurnAround((current) => !current)}
           className="bg-purple-600 p-3 rounded text-gray-50"
@@ -244,9 +243,9 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
           <FlipVertical2 size={20} />
         </button>
         <div className="flex gap-3">
-          <p className="flex gap-3 text-xl items-center">
+          <span className="flex gap-3 text-xl items-center">
             <Timer size={40} /> {rangeValue}
-          </p>
+          </span>
           <input
             type="range"
             min="0.05"
@@ -257,9 +256,9 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
           />
         </div>
         <div className="flex gap-3">
-          <p className="flex gap-3 text-xl items-center">
+          <span className="flex gap-3 text-xl items-center">
             <CaseSensitive size={40} /> {fontSize}
-          </p>
+          </span>
           <input
             type="range"
             min="1"
@@ -269,9 +268,9 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
           />
         </div>
         <div className="flex gap-3">
-          <p className="flex gap-3 text-xl items-center">
+          <span className="flex gap-3 text-xl items-center">
             <PanelLeftDashed size={40} /> {marginValue}
-          </p>
+          </span>
           <input
             type="range"
             min="10"
@@ -284,13 +283,13 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
       </header>
 
       {/* Black Box */}
-      <div className="w-full h-[70vh] bg-black fixed inset-0 m-auto -z-10 flex items-center text-white">
+      <div className="w-full h-[70vh] bg-black fixed inset-0 m-auto -z-10 sm:flex items-center text-white hidden">
         <ChevronRight size={80} />
       </div>
 
       {/* Text Wrapper */}
       <div
-        className="w-full h-screen flex justify-center overflow-y-hidden"
+        className="w-full h-screen sm:flex justify-center overflow-y-hidden hidden"
         style={{
           transform: turnAround ? "rotate(180deg) rotateY(-180deg)" : "",
         }}
