@@ -4,11 +4,15 @@ import { socket } from "../../socket";
 import { useRouter } from "next/navigation";
 import {
   CaseSensitive,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   FlipVertical2,
+  MinusCircle,
   PanelLeftDashed,
   Pause,
   Play,
+  PlusCircle,
   Repeat,
   Timer,
 } from "lucide-react";
@@ -24,7 +28,7 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
   const [isScrolling, setIsScrolling] = useState(true);
   const [isPaused, setIsPaused] = useState(true);
   const [rangeValue, setRangeValue] = useState(0.02);
-  const [fontSize, setFontSize] = useState(3);
+  const [fontSize, setFontSize] = useState(50);
   const [marginValue, setMarginValue] = useState(10);
 
   const debounceFontSizeChange = debounce(
@@ -58,36 +62,36 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
     socket.emit("send_start_prompt", params.slug);
   }, [params.slug]);
 
+  const sendScrollUp = useCallback(() => {
+    if (!isPaused) {
+      sendStartPrompt();
+      setTimeout(() => {
+        socket.emit("send_scroll_up", params.slug);
+      }, 100);
+      setTimeout(() => {
+        sendStartPrompt();
+      }, 200);
+    } else {
+      socket.emit("send_scroll_up", params.slug);
+    }
+  }, [isPaused, params.slug, sendStartPrompt]);
+
+  const sendScrollDown = useCallback(() => {
+    if (!isPaused) {
+      sendStartPrompt();
+      setTimeout(() => {
+        socket.emit("send_scroll_down", params.slug);
+      }, 100);
+      setTimeout(() => {
+        sendStartPrompt();
+      }, 200);
+    } else {
+      socket.emit("send_scroll_down", params.slug);
+    }
+  }, [isPaused, sendStartPrompt, params.slug]);
+
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      const sendScrollUp = () => {
-        if (!isPaused) {
-          sendStartPrompt();
-          setTimeout(() => {
-            socket.emit("send_scroll_up", params.slug);
-          }, 100);
-          setTimeout(() => {
-            sendStartPrompt();
-          }, 200);
-        } else {
-          socket.emit("send_scroll_up", params.slug);
-        }
-      };
-
-      const sendScrollDown = () => {
-        if (!isPaused) {
-          sendStartPrompt();
-          setTimeout(() => {
-            socket.emit("send_scroll_down", params.slug);
-          }, 100);
-          setTimeout(() => {
-            sendStartPrompt();
-          }, 200);
-        } else {
-          socket.emit("send_scroll_down", params.slug);
-        }
-      };
-
       if (event.key === " ") {
         event.preventDefault();
         sendStartPrompt();
@@ -97,7 +101,7 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
         sendScrollDown();
       }
     },
-    [sendStartPrompt, , isPaused, params.slug]
+    [sendStartPrompt, sendScrollUp, sendScrollDown]
   );
 
   const scrollUp = () => {
@@ -215,70 +219,114 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
     <div>
       {/* OPTIONS */}
       <header className="fixed top-0 left-0 w-full py-5 px-5 justify-start z-50 flex sm:flex-row flex-col items-start sm:items-center gap-10 overflow-y-auto sm:h-[15vh]">
-        <button
-          onClick={() => {
-            sendStartPrompt();
-          }}
-          className={`${
-            isPaused ? "bg-blue-400" : "bg-orange-400"
-          } border-1 rounded p-3 text-gray-50`}
-        >
-          {isPaused ? <Play size={20} /> : <Pause size={20} />}
-        </button>
-        <button
-          onClick={(e) => {
-            // don't run this code on keydown event
-            if (e.type === "click") {
-              sendRestartPrompt();
-            }
-          }}
-          className="bg-red-600 p-3 rounded text-gray-50"
-        >
-          <Repeat size={20} />
-        </button>
-        <button
-          onClick={() => setTurnAround((current) => !current)}
-          className="bg-purple-600 p-3 rounded text-gray-50"
-        >
-          <FlipVertical2 size={20} />
-        </button>
+        <div className="grid sm:flex gap-4 grid-cols-2 w-[40%] sm:w-auto">
+          <button
+            onClick={() => {
+              sendStartPrompt();
+            }}
+            className={`${
+              isPaused ? "bg-blue-400" : "bg-orange-400"
+            } border-1 rounded p-3 text-gray-50 aspect-square flex items-center justify-center`}
+          >
+            {isPaused ? <Play size={20} /> : <Pause size={20} />}
+          </button>
+          <button
+            onClick={(e) => {
+              // don't run this code on keydown event
+              if (e.type === "click") {
+                sendRestartPrompt();
+              }
+            }}
+            className="bg-red-600 p-3 rounded text-gray-50 aspect-square  flex items-center justify-center"
+          >
+            <Repeat size={20} />
+          </button>
+          <button
+            onClick={() => setTurnAround((current) => !current)}
+            className="bg-purple-600 p-3 rounded text-gray-50 hidden sm:block"
+          >
+            <FlipVertical2 size={20} />
+          </button>
+          <button
+            onClick={() => sendScrollUp()}
+            className="bg-black p-3 rounded text-gray-50 aspect-square flex items-center justify-center"
+          >
+            <ChevronUp size={20} />
+          </button>
+          <button
+            onClick={() => sendScrollDown()}
+            className="bg-black p-3 rounded text-gray-50 aspect-square flex items-center justify-center"
+          >
+            <ChevronDown size={20} />
+          </button>
+        </div>
         <div className="flex gap-3">
-          <span className="flex gap-3 text-xl items-center">
+          <span className="flex gap-3 text-xl items-center w-[100px]">
             <Timer size={40} /> {rangeValue}
           </span>
-          <input
-            type="range"
-            min="0.05"
-            step={0.05}
-            max="2"
-            /*onChange={(e) => setRangeValue(Number(e.target.value))}*/
-            onChange={(e) => debounceScrollSpeedChange(Number(e.target.value))}
-          />
+          <div className="flex items-center gap-2">
+            <MinusCircle
+              onClick={() =>
+                debounceScrollSpeedChange(Number(rangeValue - 0.05))
+              }
+            />
+            <input
+              type="range"
+              min="0.05"
+              step={0.05}
+              max="2"
+              /*onChange={(e) => setRangeValue(Number(e.target.value))}*/
+              onChange={(e) =>
+                debounceScrollSpeedChange(Number(e.target.value))
+              }
+            />
+            <PlusCircle
+              onClick={() =>
+                debounceScrollSpeedChange(Number(rangeValue + 0.05))
+              }
+            />
+          </div>
         </div>
         <div className="flex gap-3">
-          <span className="flex gap-3 text-xl items-center">
+          <span className="flex gap-3 text-xl items-center w-[100px]">
             <CaseSensitive size={40} /> {fontSize}
           </span>
-          <input
-            type="range"
-            min="1"
-            step={0.2}
-            max="5"
-            onChange={(e) => debounceFontSizeChange(Number(e.target.value))}
-          />
+          <div className="flex items-center gap-2">
+            <MinusCircle
+              onClick={() => debounceFontSizeChange(Number(fontSize - 2))}
+            />
+            <input
+              type="range"
+              min="10"
+              step={2}
+              max="100"
+              onChange={(e) => debounceFontSizeChange(Number(e.target.value))}
+            />
+            <PlusCircle
+              onClick={() => debounceFontSizeChange(Number(fontSize + 2))}
+            />
+          </div>
         </div>
-        <div className="flex gap-3">
-          <span className="flex gap-3 text-xl items-center">
+        <div className="flex items-center gap-3">
+          <span className="flex gap-3 text-xl items-center w-[100px]">
             <PanelLeftDashed size={40} /> {marginValue}
           </span>
-          <input
-            type="range"
-            min="10"
-            step={10}
-            max="500"
-            /*onChange={(e) => setMarginValue(Number(e.target.value))}*/
-            onChange={(e) => debounceMarginChange(Number(e.target.value))}
-          />
+          <div className="flex items-center gap-2">
+            <MinusCircle
+              onClick={() => debounceMarginChange(Number(marginValue) - 10)}
+            />
+            <input
+              type="range"
+              min="10"
+              step={10}
+              max="500"
+              /*onChange={(e) => setMarginValue(Number(e.target.value))}*/
+              onChange={(e) => debounceMarginChange(Number(e.target.value))}
+            />
+            <PlusCircle
+              onClick={() => debounceMarginChange(Number(marginValue) + 10)}
+            />
+          </div>
         </div>
       </header>
 
@@ -299,7 +347,7 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
           value={promptText || "Text Not Found"}
           className="text-justify w-full bg-transparent focus:outline-none border-none text-white h-full overflow-hidden py-[30%]"
           style={{
-            fontSize: `${fontSize}em`,
+            fontSize: `${fontSize}px`,
             paddingLeft: marginValue,
             paddingRight: marginValue,
           }}
