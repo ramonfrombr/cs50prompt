@@ -6,6 +6,7 @@ import {
   CaseSensitive,
   ChevronRight,
   FlipVertical2,
+  PanelLeftDashed,
   Pause,
   Play,
   Repeat,
@@ -24,6 +25,7 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
   const [isPaused, setIsPaused] = useState(true);
   const [rangeValue, setRangeValue] = useState(0.02);
   const [fontSize, setFontSize] = useState(3);
+  const [marginValue, setMarginValue] = useState(10);
 
   const debounceFontSizeChange = debounce(
     (val: number) => handleFontSizeChange(val),
@@ -32,6 +34,24 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
 
   const handleFontSizeChange = (value: number) => {
     sendDefineFontSize(value);
+  };
+
+  const debounceScrollSpeedChange = debounce(
+    (val: number) => handleScrollSpeedChange(val),
+    500
+  );
+
+  const handleScrollSpeedChange = (value: number) => {
+    sendDefineScrollSpeed(value);
+  };
+
+  const debounceMarginChange = debounce(
+    (val: number) => handleMarginChange(val),
+    500
+  );
+
+  const handleMarginChange = (value: number) => {
+    sendDefineMargin(value);
   };
 
   const sendStartPrompt = useCallback(() => {
@@ -101,6 +121,16 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
     socket.emit("send_define_font_size", params.slug, size);
   };
 
+  const sendDefineScrollSpeed = (value: number) => {
+    console.log(value);
+    socket.emit("send_define_scroll_speed", params.slug, value);
+  };
+
+  const sendDefineMargin = (value: number) => {
+    console.log(value);
+    socket.emit("send_define_margin", params.slug, value);
+  };
+
   useEffect(() => {
     if (isScrolling && textRef.current) {
       let scrollTop = textRef.current.scrollTop;
@@ -116,7 +146,7 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
         const scrollIncrement = 1 + rangeValue;
         scrollTop += scrollIncrement; // adjust scrolling speed (higher value for faster scrolling)
         textRef.current!.scrollTop = scrollTop;
-      }, 20); // Adjust interval for scrolling smoothness (lower value for smoother scrolling)
+      }, 50); // Adjust interval for scrolling smoothness (lower value for smoother scrolling)
 
       return () => clearInterval(intervalId);
     }
@@ -139,7 +169,6 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
     };
 
     const receivePromptText = (data: any) => {
-      console.log(">>> ", data);
       setPromptText(data);
     };
 
@@ -161,6 +190,16 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
     socket.on("receive_define_font_size", (size) => {
       console.log("RECEIVE_DEFINE_FONT_SIZE");
       setFontSize((current) => size);
+    });
+
+    socket.on("receive_define_scroll_speed", (size) => {
+      console.log("RECEIVE_DEFINE_SCROLL_SPEED");
+      setRangeValue((current) => size);
+    });
+
+    socket.on("receive_define_margin", (margin) => {
+      console.log("RECEIVE_DEFINE_MARGIN");
+      setMarginValue((current) => margin);
     });
 
     socket.on("receive_scroll_up", () => {
@@ -210,11 +249,11 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
           </p>
           <input
             type="range"
-            min="0.01"
-            step={0.01}
+            min="0.05"
+            step={0.05}
             max="2"
-            value={rangeValue}
-            onChange={(e) => setRangeValue(Number(e.target.value))}
+            /*onChange={(e) => setRangeValue(Number(e.target.value))}*/
+            onChange={(e) => debounceScrollSpeedChange(Number(e.target.value))}
           />
         </div>
         <div className="flex gap-3">
@@ -227,6 +266,19 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
             step={0.2}
             max="5"
             onChange={(e) => debounceFontSizeChange(Number(e.target.value))}
+          />
+        </div>
+        <div className="flex gap-3">
+          <p className="flex gap-3 text-xl items-center">
+            <PanelLeftDashed size={40} /> {marginValue}
+          </p>
+          <input
+            type="range"
+            min="10"
+            step={10}
+            max="500"
+            /*onChange={(e) => setMarginValue(Number(e.target.value))}*/
+            onChange={(e) => debounceMarginChange(Number(e.target.value))}
           />
         </div>
       </header>
@@ -246,8 +298,12 @@ const TeleprompterSlugPage = ({ params }: { params: { slug: string } }) => {
         <textarea
           ref={textRef}
           value={promptText || "Text Not Found"}
-          className="text-center w-full bg-transparent focus:outline-none border-none text-white h-full overflow-hidden py-[30%] px-[10%]"
-          style={{ fontSize: `${fontSize}em` }}
+          className="text-justify w-full bg-transparent focus:outline-none border-none text-white h-full overflow-hidden py-[30%]"
+          style={{
+            fontSize: `${fontSize}em`,
+            paddingLeft: marginValue,
+            paddingRight: marginValue,
+          }}
           readOnly
         ></textarea>
       </div>
